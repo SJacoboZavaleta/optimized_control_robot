@@ -37,11 +37,11 @@ fields = fieldnames(params);
 for i = 1:length(fields)
     assignin('base', fields{i}, params.(fields{i}));
 end
+set_param('cst_robotarm','SimulationCommand','Update')
 
 % Configuración y ejecución de la simulación
 simOut = sim('cst_robotarm', ...
-    'SrcWorkspace', 'current', ...
-    'FastRestart', 'on');
+    'SrcWorkspace', 'base','FastRestart', 'on');
 
 % Extracción eficiente de datos
 signals = simOut.simout.signals.values;

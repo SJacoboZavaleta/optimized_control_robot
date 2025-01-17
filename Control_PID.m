@@ -1,4 +1,4 @@
-function Solution = Control_PID
+function Solution = Control_PID(plant, config, sys_name)
 %--------------------------------------------------------------------------
 %   Main Program: Control_PID.
 %   Author: Fernando Martin Monar.
@@ -16,7 +16,7 @@ function Solution = Control_PID
 %   Funcion de transferencia del proceso a controlar, en bucle abierto:
 %       K= Ganancia del motor
 %       T= Constante de tiempo mecanico
-%       Gp=tf(K,[T 1 0]);
+%       plant=tf(K,[T 1 0]);
 %------------------------------
 %   Variables del DE:
 %       iter_max= Número de iteraciones
@@ -39,17 +39,13 @@ function Solution = Control_PID
 % -> See also: cost
 %--------------------------------------------------------------------------
 
-% Transfer function of the process to be controlled.
-K=13.86;%29.66;%18.08;%34.47;%15; %20.46;%1.4;%3
-T=0.0002648;%0.03266;%0.08224;%0.08099;%0.15;%0.03573;%0.7;%0.1
-Gp=tf(K,[T 1 0]);
 %------------------------------
 % Initialization of DE variables
-iter_max=20;%50;
-NP=20;  %Number of particles
-MAX_K_VAR=5;%5; % Maximum value of the PID constants.
-F=0.7;          %differential mutation factor (0-2)  
-CR=0.5;        %crossover constant (0-1)
+iter_max=config.maxIterations;%50;
+NP=config.populationSize;  %Number of particles
+MAX_K_VAR=config.maxPIDValue;%5; % Maximum value of the PID constants.
+F=config.F;          %differential mutation factor (0-2)  
+CR=config.CR;        %crossover constant (0-1)
 %------------------------------
 D=3;    %Number of chromosomes (Kp,Kd,Ki)
 %------------------------------
@@ -74,7 +70,7 @@ end
 
 %The DE algorithm estimates the best solution
 count=1;
-imp_count=1;
+%imp_count=1;
 while(count<=iter_max)% && error_max > (error + 0.000001))
     for i=1:NP
         %------------------------------------------------------------------
@@ -113,8 +109,8 @@ while(count<=iter_max)% && error_max > (error + 0.000001))
         
         %------------------------------------------------------------------
         % Cost function evaluation according to each hypothesis.
-        % error_trial=cost(Gp,population(i,2:(D+1)));
-        error_trial=cost(trial);%cost(Gp,trial);
+        % error_trial=cost(plant,population(i,2:(D+1)));
+        error_trial=cost(trial);%cost(plant,trial);
         %------------------------------------------------------------------
         % SELECTION: The best individuals are chosen for the next
         % generation (between candidates and current
@@ -157,16 +153,22 @@ while(count<=iter_max)% && error_max > (error + 0.000001))
     error=population(1,1);
     error_max=max(population(:,1));
     error_global=sum(population(:,1)); 
-    if imp_count==4
-        fprintf(1,'\n It: %f Best %f Worst: %f Global: %f \n Parameters: Kp: %f Ki: %f Kd: %f \n',count,error,error_max,error_global,bestmem(1),bestmem(2),bestmem(3));
-        imp_count=0;
+    if mod(count, 5) == 0
+        %fprintf(1,'\n It: %d Best %f Worst: %f Global: %f \n Parameters: Kp: %f Ki: %f Kd: %f \n',count,error,error_max,error_global,bestmem(1),bestmem(2),bestmem(3));
+        %imp_count=0;
+
+        fprintf('Iteration: %d\n', count);
+        fprintf('Best Error: %.4f | Worst Error: %.4f | Global Error: %.4f\n', ...
+        error, error_max, error_global);
+        fprintf('PID Parameters - Kp: %.4f | Ki: %.4f | Kd: %.4f\n\n', ...
+        bestmem(1), bestmem(2), bestmem(3));
     end
     
     GLOBAL(count)=error_global;
     MIN(count)=error;
     MAX(count)=error_max;
     
-    imp_count=imp_count+1;
+    %imp_count=imp_count+1;
     count=count+1;
 end
 
@@ -180,15 +182,35 @@ Solution.population=population;
 Solution.CONV=CONV;
 
 % Crear el controlador PID
-% En lugar de pid2, usar tf para crear la función de transferencia del PID
-C = tf([bestmem(3) bestmem(1) bestmem(2)], [1 0]);  % Forma: Kd*s + Kp + Ki/s
+PID = pid(bestmem(1), bestmem(2), bestmem(3));
+%C = tf([bestmem(3) bestmem(1) bestmem(2)], [1 0]);  % Forma: Kd*s + Kp + Ki/s
 
 % Crear el sistema en lazo cerrado
-Solution.M = feedback(C*Gp, 1);
+Solution.M = feedback(PID*plant, 1);
 % Plot of the response when the input is a step, useful when designing with
 % the error of the step response
-figure(1);
-step(Solution.M,0:0.05:5);
+
+figure("Name","PID Optimization for position control "+sys_name);
+y = step(Solution.M, 0:0.05:5);
+plot(0:0.05:5, y, '-r', 'DisplayName', 'Estimated tf')
+grid on
+xlabel('Time (s)', 'FontSize', 12)
+ylabel('Position', 'FontSize', 12)
+title("Optimized Closed-loop Step Response "+sys_name)
+legend('Location', 'best')
+
+% Convergence history
+figure('Name', "Convergence History for PID optimization "+sys_name);
+plot(1:iter_max, CONV.MIN, 'b-', 'LineWidth', 2);
+hold on;
+plot(1:iter_max, CONV.MAX, 'r--', 'LineWidth', 2);
+plot(1:iter_max, CONV.GLOBAL, 'g:', 'LineWidth', 2);
+grid on;
+xlabel('Iteration', 'FontSize', 12);
+ylabel('Cost', 'FontSize', 12);
+title("Convergence History "+sys_name);
+legend('Best', 'Worst', 'Global', 'Location', 'NorthEast');
+hold off;
 
 %--------------------------------------------------------------------------
 %   Function: Population initialization.
