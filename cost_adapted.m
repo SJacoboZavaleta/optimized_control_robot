@@ -1,4 +1,4 @@
-function error = cost_adopted(param)
+function error = cost_adapted(param)
 %--------------------------------------------------------------------------
 %   Function: Population initialization.
 %   Author: Fernando Martin Monar.

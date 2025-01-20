@@ -45,7 +45,7 @@ population = [zeros(popSize, 1), maxPID * rand(popSize, nParams)];
 
 %% Evaluate Initial Population
 for i = 1:popSize
-    population(i,1) = cost_adopted(population(i,2:(nParams+1)));
+    population(i,1) = cost_adapted(population(i,2:(nParams+1)));
 end
 
 %% Main DE Loop
@@ -81,7 +81,7 @@ for iter = 1:maxIter
         end
         
         % Evaluate trial vector
-        trialCost = cost(trial);
+        trialCost = cost_adapted(trial);
         
         % Selection
         if trialCost < population(i,1)
