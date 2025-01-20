@@ -1,4 +1,4 @@
-function error = cost(param)
+function error = cost_adopted(param)
 %--------------------------------------------------------------------------
 %   Function: Population initialization.
 %   Author: Fernando Martin Monar.
@@ -22,9 +22,9 @@ function error = cost(param)
 warning('OFF');
 
 % Configuración para ejecución en background
-load_system('cst_robotarm'); % Carga el modelo sin abrirlo
-set_param('cst_robotarm', 'SimulationMode', 'accelerator');
-set_param('cst_robotarm', 'FastRestart', 'on'); % Habilita inicio rápido
+load_system('cst_robotarm_optimized'); % Carga el modelo sin abrirlo
+set_param('cst_robotarm_optimized', 'SimulationMode', 'accelerator');
+set_param('cst_robotarm_optimized', 'FastRestart', 'on'); % Habilita inicio rápido
 
 % Asignación de parámetros del controlador PID
 Kp = param(1);
@@ -37,10 +37,10 @@ fields = fieldnames(params);
 for i = 1:length(fields)
     assignin('base', fields{i}, params.(fields{i}));
 end
-set_param('cst_robotarm','SimulationCommand','Update')
+set_param('cst_robotarm_optimized','SimulationCommand','Update')
 
 % Configuración y ejecución de la simulación
-simOut = sim('cst_robotarm', ...
+simOut = sim('cst_robotarm_optimized', ...
     'SrcWorkspace', 'base','FastRestart', 'on');
 
 % Extracción eficiente de datos
@@ -68,40 +68,5 @@ fields = fieldnames(varsToAssign);
 for i = 1:length(fields)
     assignin('base', fields{i}, varsToAssign.(fields{i}));
 end
-
-% Limpieza
-% close_system('cst_robotarm', 0); % Cierra el modelo sin guardar cambios
-
-% % Initialization parameters.
-% warning('OFF');
-% 
-% Kp=param(1);
-% Ki=param(2);
-% Kd=param(3);
-% 
-% assignin('base', 'Kp', Kp );
-% assignin('base', 'Ki', Ki );
-% assignin('base', 'Kd', Kd );
-% 
-% sim('cst_robotarm');                   %Simulacion modelo
-% 
-% s=size(simout.signals.values);
-% m 			= s(1,1);                         %Numero de muestras
-% t 			= simout.signals.values(1:m,1);   %Tiempo
-% ErrInst 	= simout.signals.values(1:m,2);   %Error Instantáneo  
-% d 			= simout.signals.values(1:m,3);   %Respuesta
-% TempFin 	= t(m,1);
-% Maximo 		= max(d);
-% assignin('base', 's', s);
-% assignin('base', 'm', m);
-% assignin('base', 't', t);		
-% assignin('base', 'd', d);		
-% assignin('base', 'ErrInst', ErrInst);			
-% assignin('base', 'TempFin', TempFin);		
-% assignin('base', 'Maximo', Maximo);	
-% 
-% ErrInt	= sum(abs(ErrInst));
-% error           = ErrInt/m;
-% assignin('base', 'error', error);
-                         
+                      
 end

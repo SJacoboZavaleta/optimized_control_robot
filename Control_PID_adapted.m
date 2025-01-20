@@ -1,4 +1,4 @@
-function Solution = Control_PID2(plant, config, sys_name)
+function Solution = Control_PID_adapted(plant, config, sys_name)
 %% PID Controller Parameter Optimization using Differential Evolution
 % Optimizes PID controller parameters for a given plant transfer function
 % using Differential Evolution (DE) algorithm.
@@ -24,7 +24,7 @@ function Solution = Control_PID2(plant, config, sys_name)
 %              .M         - Closed-loop transfer function
 %
 % Author: Fernando Martin Monar (Original)
-% Modified: [Current Date]
+% Modified: Sergio Jacobo Zavaleta
 
 %% Initialize Parameters
 maxIter = config.maxIterations;
@@ -45,7 +45,7 @@ population = [zeros(popSize, 1), maxPID * rand(popSize, nParams)];
 
 %% Evaluate Initial Population
 for i = 1:popSize
-    population(i,1) = cost(population(i,2:(nParams+1)));
+    population(i,1) = cost_adopted(population(i,2:(nParams+1)));
 end
 
 %% Main DE Loop
